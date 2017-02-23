@@ -1,0 +1,43 @@
+Important elements to look at
+
+	* thread.c ::: thread_yield()
+
+		thread_switch is invoked with S_READY as an input.
+
+		The currently running process is switched from running to ready. Nothing will change if the queue is empty, but another thread might be scheduled depending on the scheduling procedure.
+
+	* thread.c ::: thread_switch()
+
+		We take the current thread that is running and we change its state to the state we give the function.
+
+		While doing this, the interrupts are disabled and we lock the mutex on the queue
+
+	* thread.c ::: thread_fork()
+
+		Running on an existing thread you can create a new thread on process P with the name specified
+
+		!!!! This will need to be modified to include a thread priority
+
+				Consequently, the thread struct is modified to include a priority parameter
+
+				Also, the create_thread function places the priority for this first thread.
+
+		This function is only called at the test level so this shouldn't be a problem to modify.
+
+	* clock.c ::: hardclock
+
+		This function is called a set amount of cycles per second. It runs schedule() and yields a thread. In the case that schedule() does not change the queue at all, nothing will happens
+
+For Part 1:
+	
+	* Modify create_thread, thread_fork, and thread.h to use custom priorities.
+
+	* The schedule function will rearrange based on priorities
+
+	* I think we shouldn't need to worry about any context switching stuff because thread_switch already does it for you, but I might be wrong. Ask
+
+	* A test script needs to be created and we need to justify why it is meaningful
+
+	* For everything we change and data structures we create, we need to justify them
+
+	* The OS should show the scheduler being used in bootup.
