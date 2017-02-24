@@ -155,7 +155,7 @@ thread_create(const char *name)
 
 static
 struct thread *
-thread_create_priority(const char *name, int priortiy)
+thread_create_priority(const char *name, int priority)
 {
 	struct thread *thread;
 
@@ -188,7 +188,7 @@ thread_create_priority(const char *name, int priortiy)
 	thread->t_iplhigh_count = 1; /* corresponding to t_curspl */
 
 	/* If you add to struct thread, be sure to initialize here */
-
+	thread->t_priority = priortity;
 	return thread;
 }
 
