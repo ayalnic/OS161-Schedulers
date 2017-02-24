@@ -936,7 +936,30 @@ schedule(void)
 
 
 
+	/* 
+	 * For PartA
+	 * Sort &curcpu->c_runqueue
+	 * the priority is in: struct thread->t_priority
+	 *
+	 */
 
+	/*
+	 * For PartB
+	 * Each time a process is not schedule then update its age
+	 * age correlates to priorty... Something like priortiy = priority + age may work?
+	 * This way if you were higher priortiy to begin with you will get to run
+	 * However, if you were lower priority and turns out you were there for a while, then your priorty will jump forward
+	 * was done updating priortiy, sort
+	 */
+
+	/*
+	 * For PartC
+	 * MULTI-LEVEL Feedback scheduler
+	 * 
+	 * 
+	 * 
+	 * 
+	 */
 
 	// re-enable interrupts, only if it was disabled in the first place
 	// splx(spl);
