@@ -588,7 +588,7 @@ thread_fork(const char *name,
 
 int
 thread_fork_priority(const char *name,
-		unsigned int priority, 
+		int priority, 
 	    struct proc *proc,
 	    void (*entrypoint)(void *data1, unsigned long data2),
 	    void *data1, unsigned long data2)
