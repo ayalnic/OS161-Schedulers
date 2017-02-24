@@ -151,6 +151,47 @@ thread_create(const char *name)
 	return thread;
 }
 
+
+
+static
+struct thread *
+thread_create_priority(const char *name, int priortiy)
+{
+	struct thread *thread;
+
+	DEBUGASSERT(name != NULL);
+
+	thread = kmalloc(sizeof(*thread));
+	if (thread == NULL) {
+		return NULL;
+	}
+
+	thread->t_name = kstrdup(name);
+	if (thread->t_name == NULL) {
+		kfree(thread);
+		return NULL;
+	}
+	thread->t_wchan_name = "NEW";
+	thread->t_state = S_READY;
+
+	/* Thread subsystem fields */
+	thread_machdep_init(&thread->t_machdep);
+	threadlistnode_init(&thread->t_listnode, thread);
+	thread->t_stack = NULL;
+	thread->t_context = NULL;
+	thread->t_cpu = NULL;
+	thread->t_proc = NULL;
+
+	/* Interrupt state fields */
+	thread->t_in_interrupt = false;
+	thread->t_curspl = IPL_HIGH;
+	thread->t_iplhigh_count = 1; /* corresponding to t_curspl */
+
+	/* If you add to struct thread, be sure to initialize here */
+
+	return thread;
+}
+
 /*
  * Create a CPU structure. This is used for the bootup CPU and
  * also for secondary CPUs.
@@ -544,6 +585,64 @@ thread_fork(const char *name,
 	return 0;
 }
 
+
+int
+thread_fork_priority(const char *name,
+		unsigned int priority, 
+	    struct proc *proc,
+	    void (*entrypoint)(void *data1, unsigned long data2),
+	    void *data1, unsigned long data2)
+{
+	struct thread *newthread;
+	int result;
+
+	newthread = thread_create_priority(name, priority);
+	if (newthread == NULL) {
+		return ENOMEM;
+	}
+
+	/* Allocate a stack */
+	newthread->t_stack = kmalloc(STACK_SIZE);
+	if (newthread->t_stack == NULL) {
+		thread_destroy(newthread);
+		return ENOMEM;
+	}
+	thread_checkstack_init(newthread);
+
+	/*
+	 * Now we clone various fields from the parent thread.
+	 */
+
+	/* Thread subsystem fields */
+	newthread->t_cpu = curthread->t_cpu;
+
+	/* Attach the new thread to its process */
+	if (proc == NULL) {
+		proc = curthread->t_proc;
+	}
+	result = proc_addthread(proc, newthread);
+	if (result) {
+		/* thread_destroy will clean up the stack */
+		thread_destroy(newthread);
+		return result;
+	}
+
+	/*
+	 * Because new threads come out holding the cpu runqueue lock
+	 * (see notes at bottom of thread_switch), we need to account
+	 * for the spllower() that will be done releasing it.
+	 */
+	newthread->t_iplhigh_count++;
+
+	/* Set up the switchframe so entrypoint() gets called */
+	switchframe_init(newthread, entrypoint, data1, data2);
+
+	/* Lock the current cpu's run queue and make the new thread runnable */
+	thread_make_runnable(newthread, false);
+
+	return 0;
+}
+
 /*
  * High level, machine-independent context switch code.
  *
@@ -822,6 +921,29 @@ schedule(void)
 	 * You can write this. If we do nothing, threads will run in
 	 * round-robin fashion.
 	 */
+
+
+	/* Lock the run queue. */
+	spinlock_acquire(&curcpu->c_runqueue_lock);
+	
+	/* Disable interrupts, idk if we need this */
+	// spl = splhigh();
+
+	//sort the run queue every single
+
+
+	// &curcpu->c_runqueue is the threadlist run queue
+	
+	
+
+
+
+	// re-enable interrupts, only if it was disabled in the first place
+	// splx(spl);
+
+	/* Release run queue */
+	pinlock_release(&curcpu->c_runqueue_lock);
+
 }
 
 /*
