@@ -933,8 +933,8 @@ schedule(void)
 
 
 	// &curcpu->c_runqueue is the threadlist run queue
-	
-	
+
+
 
 
 
@@ -942,7 +942,7 @@ schedule(void)
 	// splx(spl);
 
 	/* Release run queue */
-	pinlock_release(&curcpu->c_runqueue_lock);
+	spinlock_release(&curcpu->c_runqueue_lock);
 
 }
 
