@@ -325,6 +325,8 @@ file      thread/spinlock.c
 file      thread/synch.c
 file      thread/thread.c
 file      thread/threadlist.c
+file      thread/sortingutils.c
+
 
 #
 # Process system

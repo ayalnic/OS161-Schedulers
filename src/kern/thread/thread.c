@@ -943,6 +943,9 @@ schedule(void)
 	 *
 	 */
 
+	 threadlist_sort(&curcpu->c_runqueue)
+
+
 	/*
 	 * For PartB
 	 * Each time a process is not schedule then update its age
