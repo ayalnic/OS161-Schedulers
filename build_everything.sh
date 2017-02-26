@@ -19,7 +19,7 @@ echo ""
 
 echo " *** CONFIGURING DUMBVM KERNEL *** "
 cd kern/conf
-./conf g DUMBVM
+./config DUMBVM
 echo ""
 echo ""
 
