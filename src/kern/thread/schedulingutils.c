@@ -102,10 +102,13 @@ void printthreadlist(struct threadlist* tl){
 	kprintf(" *** Printing threadlist by priority *** \n \n");
 
 	struct threadlistnode* temp = &tl->tl_head;;
-
+    if (temp->tln_self == NULL) {
+        kprintf(" printthreadlist: head thread is null");
+        return;
+    }
 	unsigned int count = 1;
 
-	while(temp != NULL){
+	while(temp->tln_self != NULL){
 		kprintf("Node %u: Priority = %u", count++, temp->tln_self->t_priority);
 		temp = temp->tln_next;
 	}
@@ -120,6 +123,6 @@ void decreasePriority(struct threadlistnode* node){
 }
 
 void increasePriority(struct threadlistnode* node){
-	if(node->tln_self->t_priority < 0xFFFF) 
+	if(node->tln_self->t_priority < 0xFFFF)
         node->tln_self->t_priority++;
 }

@@ -67,6 +67,7 @@ loop(void *junk, unsigned long priority)
 	volatile int i;
 	int num_loops = 100;
 	int ch = '0' + priority;
+    kprintf("%u",ch);
 
 	P(barrier);
 	V(barrier);
@@ -86,20 +87,22 @@ runthreads()
 {
 	char name[16];
 	int i, result;
-	unsigned int priority = 5;
+	unsigned int priority = 1;
 
 	for (i=1; i<=NTHREADS; i++) {
-		snprintf(name, sizeof(name), "thread_%d", i);
+		snprintf(name, sizeof(name), "thread_%d\n", i);
 		result = thread_fork_priority(name, priority, NULL, loop, NULL, priority);
 		if (result) {
 			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
 		}
-		priority += 3;
+		priority += 2;
 	}
 
+    // increments barrier
 	V(barrier);
 
 	for (i=0; i<NTHREADS; i++) {
+        // decrements tsem
 		P(tsem);
 	}
 }

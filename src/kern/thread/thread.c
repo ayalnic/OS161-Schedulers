@@ -111,7 +111,7 @@ thread_checkstack(struct thread *thread)
 
 /*
  * Create a thread. This is used both to create a first thread
- * for each CPU and to create subsequent forked threads.
+ * for each CPU and to create subsequent ed threads.
  */
 static
 struct thread *
@@ -156,7 +156,7 @@ thread_create(const char *name)
 
 static
 struct thread *
-thread_create_priority(const char *name, int priority)
+thread_create_priority(const char *name, unsigned int priority)
 {
 	struct thread *thread;
 
@@ -589,7 +589,7 @@ thread_fork(const char *name,
 
 int
 thread_fork_priority(const char *name,
-		int priority,
+		unsigned int priority,
 	    struct proc *proc,
 	    void (*entrypoint)(void *data1, unsigned long data2),
 	    void *data1, unsigned long data2)
@@ -926,8 +926,6 @@ schedule(void)
 
 	// &curcpu->c_runqueue is the threadlist run queue
 
-
-
 	/*
 	 * For PartA
 	 * Sort &curcpu->c_runqueue
@@ -936,7 +934,6 @@ schedule(void)
 	 */
 
 	 threadlist_sort(&curcpu->c_runqueue.tl_head);
-
 
 	/*
 	 * For PartB

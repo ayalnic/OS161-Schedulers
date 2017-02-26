@@ -611,6 +611,8 @@ static struct {
 	{ "fs4",	writestress2 },
 	{ "fs5",	longstress },
 	{ "fs6",	createstress },
+
+    /* PA1 tests */
     { "sch1",   schedulertest},
 	{ NULL, NULL }
 };
