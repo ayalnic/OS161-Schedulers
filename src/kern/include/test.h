@@ -104,5 +104,8 @@ void menu(char *argstr);
 /* The main function, called from start.S. */
 void kmain(char *bootstring);
 
+/* ADDED FOR PA1 */
+int schedulertest(int nargs, char **args);
+
 
 #endif /* _TEST_H_ */

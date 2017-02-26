@@ -50,6 +50,7 @@
 #include <addrspace.h>
 #include <mainbus.h>
 #include <vnode.h>
+#include <schedulingutils.h>
 
 
 /* Magic number used as a guard value on kernel thread stacks. */
@@ -943,7 +944,7 @@ schedule(void)
 	 *
 	 */
 
-	 threadlist_sort(&curcpu->c_runqueue)
+	 threadlist_sort(&curcpu->c_runqueue.tl_head);
 
 
 	/*
