@@ -589,7 +589,7 @@ thread_fork(const char *name,
 
 int
 thread_fork_priority(const char *name,
-		int priority, 
+		int priority,
 	    struct proc *proc,
 	    void (*entrypoint)(void *data1, unsigned long data2),
 	    void *data1, unsigned long data2)
@@ -918,26 +918,17 @@ thread_yield(void)
 void
 schedule(void)
 {
-	/*
-	 * You can write this. If we do nothing, threads will run in
-	 * round-robin fashion.
-	 */
-
-
 	/* Lock the run queue. */
 	spinlock_acquire(&curcpu->c_runqueue_lock);
-	
-	/* Disable interrupts, idk if we need this */
-	// spl = splhigh();
-
-	//sort the run queue every single
-
+	/* Disable interrupts */
+    int spl;
+	spl = splhigh();
 
 	// &curcpu->c_runqueue is the threadlist run queue
 
 
 
-	/* 
+	/*
 	 * For PartA
 	 * Sort &curcpu->c_runqueue
 	 * the priority is in: struct thread->t_priority
@@ -959,15 +950,15 @@ schedule(void)
 	/*
 	 * For PartC
 	 * MULTI-LEVEL Feedback scheduler
-	 * 
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
+	 *
 	 */
 
-	// re-enable interrupts, only if it was disabled in the first place
-	// splx(spl);
 
+	// re-enable interrupts
+	splx(spl);
 	/* Release run queue */
 	spinlock_release(&curcpu->c_runqueue_lock);
 

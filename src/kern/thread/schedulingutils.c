@@ -3,7 +3,7 @@
  *
  * Used for sorting threadlists, aging, and working with multi-level queues
  *
- */ 
+ */
 
 
 #include <types.h>
@@ -22,7 +22,7 @@ void threadlist_sort(struct threadlistnode* head){
 		if((head->tln_self == NULL) || (head->tln_next->tln_self == NULL)) return;
 
 
-	/* RECURSIVE CASE */ 
+	/* RECURSIVE CASE */
 
 	/*
 	 *  (1) The list is split into two lists: one with head "a" and another with head "b"
@@ -33,7 +33,7 @@ void threadlist_sort(struct threadlistnode* head){
 		struct threadlistnode* fast;
 		struct threadlistnode* a;
 		struct threadlistnode* b;
-		 
+
 		 /* When the fast pointer reaches null, slow will be one node behind the middle  */
 
 		slow = head;
@@ -42,7 +42,7 @@ void threadlist_sort(struct threadlistnode* head){
 			fast = fast->tln_next;
 			if(fast->tln_next->tln_self != NULL){
 				slow = slow->tln_next;
-				fast = fast->tln_next;	
+				fast = fast->tln_next;
 			}
 		}
 
@@ -77,7 +77,7 @@ struct threadlistnode* threadlist_merge_sorted(struct threadlistnode* a, struct 
 
 	if (a->tln_self == NULL) return(b);
 	else if (b->tln_self == NULL) return(a);
- 
+
 	struct threadlistnode* result;
 
 	/* Recursive step: We merge whatever node's has highest priority with this node's next and the other node */
@@ -115,9 +115,11 @@ void printthreadlist(struct threadlist* tl){
 /* Function to decrease a thread's priority by one */
 
 void decreasePriority(struct threadlistnode* node){
-	if(b->tln_self->t_priority > 0) b->tln_self->t_priority--;
+	if(node->tln_self->t_priority > 0)
+        node->tln_self->t_priority--;
 }
 
 void increasePriority(struct threadlistnode* node){
-	if(b->tln_self->t_priority < 0xFFFF) b->tln_self->t_priority++;
+	if(node->tln_self->t_priority < 0xFFFF) 
+        node->tln_self->t_priority++;
 }

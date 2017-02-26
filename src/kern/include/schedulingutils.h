@@ -4,9 +4,9 @@
 /*
  * SORTING UTILTIIES
  *
- * Used for sorting threadlist	
+ * Used for sorting threadlist
  *
- */ 
+ */
 
 
 #include <types.h>
@@ -21,5 +21,9 @@
 void threadlist_sort(struct threadlistnode* head);
 struct threadlistnode* threadlist_merge_sorted(struct threadlistnode* a, struct threadlistnode* b);
 void printthreadlist(struct threadlist* tl);
+
+
+void decreasePriority(struct threadlistnode* node);
+void increasePriority(struct threadlistnode* node);
 
 #endif /* _SCHEDULINGUTILS_H_ */
