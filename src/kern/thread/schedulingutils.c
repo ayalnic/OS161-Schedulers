@@ -78,34 +78,34 @@ struct threadlistnode* threadlist_merge_sorted(struct threadlistnode* a, struct 
 	if (a->tln_self == NULL) return(b);
 	else if (b->tln_self == NULL) return(a);
 
-	struct threadlistnode* result;
+	// struct threadlistnode* result;
 
 	/* Recursive step: We merge whatever node's has highest priority with this node's next and the other node */
 	if (a->tln_self->t_priority <= b->tln_self->t_priority)
 	{
-		result = a;
-		result->tln_next = threadlist_merge_sorted(a->tln_next, b);
+		a->tln_next = threadlist_merge_sorted(a->tln_next, b);
+        a->tln_next->tln_prev = a;
+        a->tln_prev = NULL;
+        return a;
 	}
 	else
 	{
-		result = b;
-		result->tln_next = threadlist_merge_sorted(a, b->tln_next);
+		b->tln_next = threadlist_merge_sorted(a, b->tln_next);
+        b->tln_next->tln_prev = b;
+        b->tln_prev = NULL;
+        return b;
 	}
-
-	return(result);
 
 }
 
-/* Function to print lists useful for debugging */
-
+/* Function to print lists useful for debugging
+ * Does not currently work
+ */
+ 
 void printthreadlist(struct threadlist* tl){
 	kprintf(" *** Printing threadlist by priority *** \n \n");
 
-	struct threadlistnode* temp = &tl->tl_head;;
-    if (temp->tln_self == NULL) {
-        kprintf(" printthreadlist: head thread is null");
-        return;
-    }
+	struct threadlistnode* temp = &tl->tl_head;
 	unsigned int count = 1;
 
 	while(temp->tln_self != NULL){

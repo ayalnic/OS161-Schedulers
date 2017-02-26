@@ -65,9 +65,8 @@ void
 loop(void *junk, unsigned long priority)
 {
 	volatile int i;
-	int num_loops = 100;
+	int num_loops = 10;
 	int ch = '0' + priority;
-    kprintf("%u",ch);
 
 	P(barrier);
 	V(barrier);
@@ -88,14 +87,16 @@ runthreads()
 	char name[16];
 	int i, result;
 	unsigned int priority = 1;
+    int pri[5] = {1, 2, 3, 4, 5};
 
 	for (i=1; i<=NTHREADS; i++) {
 		snprintf(name, sizeof(name), "thread_%d\n", i);
-		result = thread_fork_priority(name, priority, NULL, loop, NULL, priority);
+		result = thread_fork_priority(name, pri[priority], NULL, loop, NULL, pri[priority]);
 		if (result) {
 			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
 		}
 		priority += 2;
+        priority %= 5;
 	}
 
     // increments barrier
@@ -107,6 +108,13 @@ runthreads()
 	}
 }
 
+
+/*
+ * The output if it was running correctly will be
+ * 11111111112222222222333333333344444444445555555555
+ * the round robin solution will output
+ * 24135241352413524135241352413524135241352413524135
+ */
 int
 schedulertest(int nargs, char **args)
 {
