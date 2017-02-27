@@ -18,9 +18,13 @@
 // struct threadlistnode; /* from <threadlist.h> */
 // struct threadlist; /* from <threadlist.h> */
 
-void threadlist_sort(struct threadlistnode* head);
-struct threadlistnode* threadlist_merge_sorted(struct threadlistnode* a, struct threadlistnode* b);
+void threadlist_sort(struct threadlist* tl);
+void threadlist_bubblesort(struct threadlistnode** firstRef);
+void threadlist_swap(struct thread *a, struct thread *b);
+void threadlist_mergesort(struct threadlistnode** firstRef);
+struct threadlistnode* threadlist_merger(struct threadlistnode* a, struct threadlistnode* b);
 void printthreadlist(struct threadlist* tl);
+void printfromnode(struct threadlistnode* tln);
 
 
 void decreasePriority(struct threadlistnode* node);

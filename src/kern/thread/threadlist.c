@@ -238,5 +238,3 @@ threadlist_remove(struct threadlist *tl, struct thread *t)
 	DEBUGASSERT(tl->tl_count > 0);
 	tl->tl_count--;
 }
-
-

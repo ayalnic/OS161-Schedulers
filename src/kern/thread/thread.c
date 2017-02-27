@@ -147,6 +147,7 @@ thread_create(const char *name)
 	thread->t_curspl = IPL_HIGH;
 	thread->t_iplhigh_count = 1; /* corresponding to t_curspl */
 
+
 	/* If you add to struct thread, be sure to initialize here */
 
 	return thread;
@@ -921,7 +922,7 @@ schedule(void)
 	/* Lock the run queue. */
 	spinlock_acquire(&curcpu->c_runqueue_lock);
 	/* Disable interrupts */
-    int spl;
+  int spl;
 	spl = splhigh();
 
 	// &curcpu->c_runqueue is the threadlist run queue
@@ -933,8 +934,10 @@ schedule(void)
 	 *
 	 */
 
-	 threadlist_sort(&curcpu->c_runqueue.tl_head);
-     
+	 printthreadlist(&curcpu->c_runqueue);
+	 threadlist_sort(&curcpu->c_runqueue);
+	 printthreadlist(&curcpu->c_runqueue);
+
 	/*
 	 * For PartB
 	 * Each time a process is not schedule then update its age

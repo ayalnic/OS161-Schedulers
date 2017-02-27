@@ -80,6 +80,7 @@ loop(void *junk, unsigned long priority)
 	V(tsem);
 }
 
+/*
 static
 void
 runthreads()
@@ -96,7 +97,36 @@ runthreads()
 			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
 		}
 		priority += 2;
-        priority %= 5;
+    priority %= 5;
+	}
+
+    // increments barrier
+	V(barrier);
+
+	for (i=0; i<NTHREADS; i++) {
+        // decrements tsem
+		P(tsem);
+	}
+}
+*/
+
+static
+void
+runthreads()
+{
+	char name[16];
+	int i, result;
+	unsigned int priority = 1;
+    int pri[5] = {1, 2, 3, 4, 5};
+
+	for (i=1; i<=30; i++) {
+		snprintf(name, sizeof(name), "thread_%d\n", i);
+		result = thread_fork_priority(name, pri[priority], NULL, loop, NULL, pri[priority]);
+		if (result) {
+			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
+		}
+		priority += 2;
+    priority %= 5;
 	}
 
     // increments barrier

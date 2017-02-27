@@ -104,7 +104,7 @@ struct thread {
 	/*
 	 * Public fields
 	 */
-	int t_priority;
+	unsigned int t_priority;
 	/* add more here as needed */
 };
 
