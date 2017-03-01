@@ -52,13 +52,60 @@
 #include <vnode.h>
 #include <schedulingutils.h>
 
+/* ADDED FOR SCHEDULING ASSIGNMENT: Enum for the type of scheduler to use */
+typedef enum {
+	STATIC_PRIOIRTY,
+	DYNAMIC_PRIORITY,
+	MULTI_LEVEL
+} scheduler_type;
+
+
+
+/*
+ * ADDED FOR SCHEDULING ASSIGNMENT:
+ * Set the time interval for which we will be aging the threads
+ */
+#define SCHEDULE_MODE DYNAMIC_PRIORITY
+
+/* ADDED FOR SCHEDULING ASSIGNMENT:
+Defines the frequency for which the threads change their age for each
+call of schedule()
+*/
+#define AGING_FREQUENCY 8
+
+/*
+ADDED FOR SCHEDULING ASSIGNMENT:
+We use a preprocessor to check if scheduler mode is multi level queue.
+If it is, we create three new threadlists: A, B and C
+
+Threadlist A will contain priorities 1-10
+Threadlist B will contain priorities 11-20
+Threadlist C will contain priorities 21+
+
+The thread_fork_priority priority function will be inserting new threads
+in its appropiate threalist A, B or C.
+
+Everytime schedule() is called, we age all of the threads appropiately, and
+then
+
+If at any point the runqueue is empty, the schedule function will move all of
+the threads from B to the cpu runqueue. If there are no threads on B, we move
+all of the threads from C to the cpu runqueue
+
+*/
+
+#if SCHEDULE_MODE==MULTI_LEVEL
+
+	struct threadlist runqueue_A;
+	struct threadlist runqueue_B;
+	struct threadlist runqueue_C;
+
+#endif
+
+
 
 /* Magic number used as a guard value on kernel thread stacks. */
 #define THREAD_STACK_MAGIC 0xbaadf00d
-
-/* Set number of time we age the threads per schedule */
-#define SCHEDULE_MODE 1
-#define AGE 1
 
 /* Wait channel. A wchan is protected by an associated, passed-in spinlock. */
 struct wchan {
@@ -662,18 +709,7 @@ thread_fork_priority(const char *name,
 static
 void
 thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
-{	
-	// if (!threadlist_isempty(&wc->wc_threads)){
-	// 	putch('\n');
-	// 	putch('w');
-	// 	putch('c');
-	// 	putch('\n');
-	// 	char *node = wc->wc_threads.tl_head.tln_next->tln_self->t_name;
-	// 	int i;
-	// 	for (i = 0; i < 9; i++){
-	// 		putch(node[i]);
-	// 	} 
-	// }
+{
 
 	struct thread *cur, *next;
 	int spl;
@@ -683,7 +719,6 @@ thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
 
 	/* Explicitly disable interrupts on this processor */
 	spl = splhigh();
-
 	cur = curthread;
 
 	/*
@@ -941,34 +976,45 @@ schedule(void)
 	int spl;
 	spl = splhigh();
 
-	// &curcpu->c_runqueue is the threadlist run queue
-
-	/*
-	 * For PartA
-	 * Sort &curcpu->c_runqueue
-	 * the priority is in: struct thread->t_priority
+	/* ADDED FOR SCHEDULING ASSIGNMENT:
+	 * Depending on the value of SCHEDULE_MODE, there are different methods the
+	 * next thread is scheduled:
 	 *
-	 */
+	 * 		+	SCHEDULE_MODE == STATIC_PRIOIRTY
+	 *			In this mode, the runqueue is sorted based on priority.
+	 *
+	 *		+	SCHEDULE_MODE == DYNAMIC_PRIORITY
+	 *			Aside from sorting, depending on the value of AGING_FREQUENCY, the
+	 *			threads will decrement in priority by 1 if in the runqueue or
+	 *			increment by 1 if running.
+	 *
+	 *		+	SCHEDULE_MODE == MULTI_LEVEL
+	 *
+	 *
+	 *
+   */
 
 
-	/* PartB, run every AGE time that schedule() has ran */
-	if (SCHEDULE_MODE==1 && (curcpu->c_hardclocks % AGE) == 0) {
-		setage(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue);
+	if (SCHEDULE_MODE==STATIC_PRIOIRTY) {
+ 			threadlist_sort(&curcpu->c_runqueue);
 	}
 
-	threadlist_sort(&curcpu->c_runqueue);
 
-	
+	else if (SCHEDULE_MODE==DYNAMIC_PRIORITY) {
+		if((curcpu->c_hardclocks % AGING_FREQUENCY) == 0)
+		{
+			threadlist_updateage(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue);
+		}
+			threadlist_sort(&curcpu->c_runqueue);
+	}
 
-	/*
-	 * For PartC
-	 * MULTI-LEVEL Feedback scheduler
-	 *
-	 *
-	 *
-	 *
-	 */
+	else if (SCHEDULE_MODE==MULTI_LEVEL) {
+		if((curcpu->c_hardclocks % AGING_FREQUENCY) == 0)
+		{
+			threadlist_updateage(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue);
+		}
 
+	}
 
 	// re-enable interrupts
 	splx(spl);

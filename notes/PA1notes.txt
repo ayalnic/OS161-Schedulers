@@ -29,7 +29,7 @@ Important elements to look at
 		This function is called a set amount of cycles per second. It runs schedule() and yields a thread. In the case that schedule() does not change the queue at all, nothing will happens
 
 For Part 1:
-	
+
 	* Modify create_thread, thread_fork, and thread.h to use custom priorities.
 
 	* The schedule function will rearrange based on priorities
