@@ -14,40 +14,40 @@
 
 void threadlist_sort(struct threadlist* tl){
 
-		if(tl->tl_count  < 2){
-			kprintf("\nThreadlist contains less than two nodes. No need to sort \n");
-			return;
-		}
+	if(tl->tl_count  < 2){
+		// kprintf("\nThreadlist contains less than two nodes. No need to sort \n");
+		return;
+	}
 
-		putch('B');putch('e');putch('f');putch('o');putch('r');putch('e');putch(':');putch('\n'); printfromnode(tl->tl_head.tln_next);
-		struct threadlistnode** firstRef = &tl->tl_head.tln_next; //This will refer to the very first node of the resulting linked list
-		threadlist_bubblesort(firstRef, tl->tl_count); //Merge sort operates as a linkedlist. The prev links still need to be fixed
-		putch('A');putch('f');putch('t');putch('e');putch('r');putch(':');putch('\n'); printfromnode(tl->tl_head.tln_next);
+	// putch('B');putch('e');putch('f');putch('o');putch('r');putch('e');putch(':');putch('\n'); printfromnode(tl->tl_head.tln_next);
+	// struct threadlistnode** firstRef = &tl->tl_head.tln_next; //This will refer to the very first node of the resulting linked list
+	// threadlist_bubblesort(firstRef, tl->tl_count); //Merge sort operates as a linkedlist. The prev links still need to be fixed
+	// putch('A');putch('f');putch('t');putch('e');putch('r');putch(':');putch('\n'); printfromnode(tl->tl_head.tln_next);
 }
 
 void threadlist_bubblesort(struct threadlistnode** firstRef, unsigned int size){
-		struct threadlistnode* firstNode = *firstRef;
-		struct threadlistnode* current;
-		unsigned int i,j;
-		for(i=0; i<size; i++){
-			current = firstNode;
-			for(j=1; j<size; j++){
-				if(current->tln_self->t_priority >= current->tln_next->tln_self->t_priority){
-						threadlist_swap(current, current->tln_next);
-						if(current == firstNode) firstNode = current->tln_prev;
-				}
-				else current = current->tln_next;
+	struct threadlistnode* firstNode = *firstRef;
+	struct threadlistnode* current;
+	unsigned int i,j;
+	for(i=0; i<size; i++){
+		current = firstNode;
+		for(j=1; j<size; j++){
+			if(current->tln_self->t_priority >= current->tln_next->tln_self->t_priority){
+				threadlist_swap(current, current->tln_next);
+				if(current == firstNode) firstNode = current->tln_prev;
 			}
+			else current = current->tln_next;
 		}
+	}
 }
 
 void threadlist_swap(struct threadlistnode* a, struct threadlistnode* b){
-		a->tln_next = b->tln_next;
-		b->tln_prev = a->tln_prev;
-		a->tln_prev->tln_next = b;
-		b->tln_next->tln_prev = a;
-		b->tln_next = a;
-		a->tln_prev = b;
+	a->tln_next = b->tln_next;
+	b->tln_prev = a->tln_prev;
+	a->tln_prev->tln_next = b;
+	b->tln_next->tln_prev = a;
+	b->tln_next = a;
+	a->tln_prev = b;
 }
 
 
@@ -193,17 +193,33 @@ void setage(struct threadlistnode *curthread, struct threadlist *tl){
 		// list is empty or only has 1 element
 		return;
 	}
+	// putch('b'); putch('e');
+	// printfromnode(tl->tl_head.tln_next);
 
 	// increment the thread in the cpu
 	increasePriority(curthread);
 
 	// iterate through the list and modify as needed
+	
+	
 	struct threadlistnode *firstRef = tl->tl_head.tln_next;
+	
+	putch('\n');
+	putch(firstRef->tln_self->t_state+'0');
+	putch('\n');
+
 	do{	
 		if (firstRef->tln_self->t_state == S_RUN){
 			decreasePriority(firstRef);
+			putch('\n');
+			putch('D');
+			putch('\n');
+
 		}
 		firstRef = firstRef->tln_next;
 	}
 	while(firstRef->tln_next != NULL);
+	// putch('a');putch('f');
+	// printfromnode(tl->tl_head.tln_next);
+
 }

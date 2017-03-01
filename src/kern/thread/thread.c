@@ -57,6 +57,7 @@
 #define THREAD_STACK_MAGIC 0xbaadf00d
 
 /* Set number of time we age the threads per schedule */
+#define SCHEDULE_MODE 1
 #define AGE 1
 
 /* Wait channel. A wchan is protected by an associated, passed-in spinlock. */
@@ -950,23 +951,12 @@ schedule(void)
 	 */
 
 
-	/* PartB, run every AGE time that schedule has ran */
-	if ((curcpu->c_hardclocks % AGE) == 0) {
+	/* PartB, run every AGE time that schedule() has ran */
+	if (SCHEDULE_MODE==1 && (curcpu->c_hardclocks % AGE) == 0) {
 		setage(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue);
 	}
 
 	threadlist_sort(&curcpu->c_runqueue);
-
-	/*
-	 * For PartB
-	 * Each time a process is not schedule then update its age
-	 * age correlates to priorty... Something like priortiy = priority + age may work?
-	 * This way if you were higher priortiy to begin with you will get to run
-	 * However, if you were lower priority and turns out you were there for a while, then your priorty will jump forward
-	 * was done updating priortiy, sort
-	 */
-
-	 // part B was implemented in the clock.c file, under hardclock()
 
 	
 
