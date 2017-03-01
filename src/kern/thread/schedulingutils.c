@@ -187,3 +187,23 @@ void increasePriority(struct threadlistnode* node){
 	if(node->tln_self->t_priority < 0xFFFF)
         node->tln_self->t_priority++;
 }
+
+void setage(struct threadlistnode *curthread, struct threadlist *tl){
+	if(threadlist_isempty(tl) || (tl->tl_count <= 1)){
+		// list is empty or only has 1 element
+		return;
+	}
+
+	// increment the thread in the cpu
+	increasePriority(curthread);
+
+	// iterate through the list and modify as needed
+	struct threadlistnode *firstRef = tl->tl_head.tln_next;
+	do{	
+		if (firstRef->tln_self->t_state == S_RUN){
+			decreasePriority(firstRef);
+		}
+		firstRef = firstRef->tln_next;
+	}
+	while(firstRef->tln_next != NULL);
+}

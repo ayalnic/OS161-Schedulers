@@ -100,9 +100,10 @@ hardclock(void)
 	if ((curcpu->c_hardclocks % MIGRATE_HARDCLOCKS) == 0) {
 		thread_consider_migration();
 	}
-	if ((curcpu->c_hardclocks % SCHEDULE_HARDCLOCKS) == 0) {
-		schedule();
-	}
+	// if ((curcpu->c_hardclocks % SCHEDULE_HARDCLOCKS) == 0) {
+	// 	schedule();
+	// }
+	schedule();
 	thread_yield();
 }
 
