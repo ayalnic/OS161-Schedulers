@@ -87,17 +87,15 @@ runthreads()
 {
 	char name[16];
 	int i, result;
-	unsigned int priority = 1;
-    int pri[5] = {1, 2, 3, 4, 9};
+	unsigned int priority = 30;
 
 	for (i=1; i<=30; i++) {
 		snprintf(name, sizeof(name), "thread_%d\n", i);
-		result = thread_fork_priority(name, pri[priority], NULL, loop, NULL, pri[priority]);
+		result = thread_fork_priority(name, priority], NULL, loop, NULL, priority);
 		if (result) {
 			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
 		}
-		priority += 2;
-    priority %= 5;
+		priority -= 1;
 	}
 
     // increments barrier
@@ -138,7 +136,10 @@ runthreads2()
 		if (result) {
 			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
 		}
-		priority += 2;
+
+		/* create multiple threads of the same priority */
+		if ((i % 5) == 0)
+			priority += 5;
 	}
 
     // increments barrier
@@ -179,8 +180,7 @@ runthreads3()
 		if (result) {
 			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
 		}
-		priority += 2;
-    priority %= 5;
+		priority += 3;
 	}
 
     // increments barrier
