@@ -56,6 +56,9 @@
 /* Magic number used as a guard value on kernel thread stacks. */
 #define THREAD_STACK_MAGIC 0xbaadf00d
 
+/* Set number of time we age the threads per schedule */
+#define AGE 1
+
 /* Wait channel. A wchan is protected by an associated, passed-in spinlock. */
 struct wchan {
 	const char *wc_name;		/* name for this channel */
@@ -658,7 +661,19 @@ thread_fork_priority(const char *name,
 static
 void
 thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
-{
+{	
+	// if (!threadlist_isempty(&wc->wc_threads)){
+	// 	putch('\n');
+	// 	putch('w');
+	// 	putch('c');
+	// 	putch('\n');
+	// 	char *node = wc->wc_threads.tl_head.tln_next->tln_self->t_name;
+	// 	int i;
+	// 	for (i = 0; i < 9; i++){
+	// 		putch(node[i]);
+	// 	} 
+	// }
+
 	struct thread *cur, *next;
 	int spl;
 
@@ -922,7 +937,7 @@ schedule(void)
 	/* Lock the run queue. */
 	spinlock_acquire(&curcpu->c_runqueue_lock);
 	/* Disable interrupts */
-  int spl;
+	int spl;
 	spl = splhigh();
 
 	// &curcpu->c_runqueue is the threadlist run queue
@@ -934,9 +949,13 @@ schedule(void)
 	 *
 	 */
 
-	 printthreadlist(&curcpu->c_runqueue);
-	 threadlist_sort(&curcpu->c_runqueue);
-	 printthreadlist(&curcpu->c_runqueue);
+
+	/* PartB, run every AGE time that schedule has ran */
+	if ((curcpu->c_hardclocks % AGE) == 0) {
+		setage(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue);
+	}
+
+	threadlist_sort(&curcpu->c_runqueue);
 
 	/*
 	 * For PartB
@@ -946,6 +965,10 @@ schedule(void)
 	 * However, if you were lower priority and turns out you were there for a while, then your priorty will jump forward
 	 * was done updating priortiy, sort
 	 */
+
+	 // part B was implemented in the clock.c file, under hardclock()
+
+	
 
 	/*
 	 * For PartC

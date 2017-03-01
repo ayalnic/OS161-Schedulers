@@ -13,8 +13,8 @@
 #include <schedulingutils.h>
 
 void threadlist_sort(struct threadlist* tl){
-		if(threadlist_isempty(tl)){
-			kprintf("\n Threadlist is empty. No nodes to sort \n");
+		if(threadlist_isempty(tl) || (tl->tl_count <= 1)){
+			// list is empty or only has 1 element
 			return;
 		}
 		struct threadlistnode** firstRef = &tl->tl_head.tln_next; //The first node containing data is actually
@@ -72,11 +72,11 @@ void threadlist_mergesort(struct threadlistnode** firstRef){ //Merge sort functi
 
 			//Lets try to iterate through the two lists pointed by a & b, just for debugging:
 
-			kprintf("----- Printing both partitions -----\n");
-			kprintf("a list --- ");
- 			printfromnode(a);
- 			kprintf("b list --- ");
- 			printfromnode(b);
+			// kprintf("----- Printing both partitions -----\n");
+			// kprintf("a list --- ");
+		// 	printfromnode(a);
+		// 	kprintf("b list --- ");
+		// 	printfromnode(b);
 
 	/*
 	 *  (2) Recursively split into sublists
@@ -107,33 +107,31 @@ void threadlist_mergesort(struct threadlistnode** firstRef){ //Merge sort functi
 
 
 void threadlist_bubblesort(struct threadlistnode** firstRef){
-		struct threadlistnode* firstNode = *firstRef;
-		struct threadlistnode* ptr;
-		struct threadlistnode* lastPtr = NULL; //Will point to the previous value of ptr
-		int nodeWasSwapped; //Boolean variable
+	struct threadlistnode* firstNode = *firstRef;
+	struct threadlistnode* ptr;
+	struct threadlistnode* lastPtr = NULL; //Will point to the previous value of ptr
+	int nodeWasSwapped; //Boolean variable
 
-		if(firstNode == NULL){
-				return; //List is empty and there is no need to sort;
-		}
+	if(firstNode == NULL){
+		return; //List is empty and there is no need to sort;
+	}
 
-		do{
-				nodeWasSwapped = 0;
-				ptr = firstNode;
+	do{
+		nodeWasSwapped = 0;
+		ptr = firstNode;
 
-				while(ptr->tln_next != lastPtr){
-					printfromnode(firstNode);
-
-
-						if(ptr->tln_self->t_priority >= ptr->tln_next->tln_self->t_priority){
-							//Swap ptr1 with ptr1->next
-							threadlist_swap(ptr->tln_self, ptr->tln_next->tln_self);
-							nodeWasSwapped = 1;
-						}
-						ptr = ptr->tln_next;
+		while(ptr->tln_next != lastPtr){
+			// printfromnode(firstNode);
+				if(ptr->tln_self->t_priority >= ptr->tln_next->tln_self->t_priority){
+					//Swap ptr1 with ptr1->next
+					threadlist_swap(ptr->tln_self, ptr->tln_next->tln_self);
+					nodeWasSwapped = 1;
 				}
-				lastPtr = ptr;
+				ptr = ptr->tln_next;
 		}
-		while(nodeWasSwapped);
+		lastPtr = ptr;
+	}
+	while(nodeWasSwapped);
 
 }
 
@@ -216,4 +214,24 @@ void decreasePriority(struct threadlistnode* node){
 void increasePriority(struct threadlistnode* node){
 	if(node->tln_self->t_priority < 0xFFFF)
         node->tln_self->t_priority++;
+}
+
+void setage(struct threadlistnode *curthread, struct threadlist *tl){
+	if(threadlist_isempty(tl) || (tl->tl_count <= 1)){
+		// list is empty or only has 1 element
+		return;
+	}
+
+	// increment the thread in the cpu
+	increasePriority(curthread);
+
+	// iterate through the list and modify as needed
+	struct threadlistnode *firstRef = tl->tl_head.tln_next;
+	do{	
+		if (firstRef->tln_self->t_state == S_RUN){
+			decreasePriority(firstRef);
+		}
+		firstRef = firstRef->tln_next;
+	}
+	while(firstRef->tln_next != NULL);
 }
