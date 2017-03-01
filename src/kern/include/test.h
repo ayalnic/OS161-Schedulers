@@ -106,6 +106,8 @@ void kmain(char *bootstring);
 
 /* ADDED FOR PA1 */
 int schedulertest(int nargs, char **args);
+int schedulertest2(int nargs, char **args);
+int schedulertest3(int nargs, char **args);
 
 
 #endif /* _TEST_H_ */

@@ -80,32 +80,6 @@ loop(void *junk, unsigned long priority)
 	V(tsem);
 }
 
-/*
-static
-void
-runthreads()
-{
-	char name[16];
-	int i, result;
-	unsigned int priority = 1;
-    int pri[5] = {1, 2, 3, 4, 5};
-	for (i=1; i<=NTHREADS; i++) {
-		snprintf(name, sizeof(name), "thread_%d\n", i);
-		result = thread_fork_priority(name, pri[priority], NULL, loop, NULL, pri[priority]);
-		if (result) {
-			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
-		}
-		priority += 2;
-    priority %= 5;
-	}
-    // increments barrier
-	V(barrier);
-	for (i=0; i<NTHREADS; i++) {
-        // decrements tsem
-		P(tsem);
-	}
-}
-*/
 
 static
 void
@@ -136,12 +110,6 @@ runthreads()
 }
 
 
-/*
- * The output if it was running correctly will be
- * 11111111112222222222333333333344444444445555555555
- * the round robin solution will output
- * 24135241352413524135241352413524135241352413524135
- */
 int
 schedulertest(int nargs, char **args)
 {
@@ -151,6 +119,89 @@ schedulertest(int nargs, char **args)
 	init_semaphores();
 	kprintf("Starting scheduler test...\n");
 	runthreads();
+	kprintf("\nScheduler test done.\n");
+
+	return 0;
+}
+
+static
+void
+runthreads2()
+{
+	char name[16];
+	int i, result;
+	unsigned int priority = 1;
+
+	for (i=1; i<=30; i++) {
+		snprintf(name, sizeof(name), "thread_%d\n", i);
+		result = thread_fork_priority(name, priority, NULL, loop, NULL, priority);
+		if (result) {
+			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
+		}
+		priority += 2;
+	}
+
+    // increments barrier
+	V(barrier);
+
+	for (i=0; i<NTHREADS; i++) {
+        // decrements tsem
+		P(tsem);
+	}
+}
+
+
+int
+schedulertest2(int nargs, char **args)
+{
+	(void)nargs;
+	(void)args;
+
+	init_semaphores();
+	kprintf("Starting scheduler test...\n");
+	runthreads2();
+	kprintf("\nScheduler test done.\n");
+
+	return 0;
+}
+
+static
+void
+runthreads3()
+{
+	char name[16];
+	int i, result;
+	unsigned int priority = 1;
+
+	for (i=1; i<=30; i++) {
+		snprintf(name, sizeof(name), "thread_%d\n", i);
+		result = thread_fork_priority(name, priority, NULL, loop, NULL, priority);
+		if (result) {
+			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
+		}
+		priority += 2;
+    priority %= 5;
+	}
+
+    // increments barrier
+	V(barrier);
+
+	for (i=0; i<NTHREADS; i++) {
+        // decrements tsem
+		P(tsem);
+	}
+}
+
+
+int
+schedulertest3(int nargs, char **args)
+{
+	(void)nargs;
+	(void)args;
+
+	init_semaphores();
+	kprintf("Starting scheduler test...\n");
+	runthreads2();
 	kprintf("\nScheduler test done.\n");
 
 	return 0;
