@@ -18,14 +18,13 @@
 // struct threadlistnode; /* from <threadlist.h> */
 // struct threadlist; /* from <threadlist.h> */
 
-void threadlist_sort(struct threadlist* tl);
-void threadlist_bubblesort(struct threadlistnode** firstRef, unsigned int size);
+void threadlist_bubblesort(struct threadlist* tl);
 void threadlist_swap(struct threadlistnode *a, struct threadlistnode *b);
+
 void threadlist_updateage(struct threadlistnode *curthread, struct threadlist *tl);
+void threadlist_updateage_multilevel(struct threadlistnode *curthread, struct threadlist *A, struct threadlist *B, struct threadlist *C);
+void threadlist_move(struct threadlist* source, struct threadlist* destination, struct threadlistnode *sourceNode);
 
-
-void threadlist_mergesort(struct threadlistnode** firstRef);
-struct threadlistnode* threadlist_merger(struct threadlistnode* a, struct threadlistnode* b);
 void printthreadlist(struct threadlist* tl);
 void printfromnode(struct threadlistnode* tln);
 #endif /* _SCHEDULINGUTILS_H_ */

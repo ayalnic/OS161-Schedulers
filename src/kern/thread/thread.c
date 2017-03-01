@@ -65,7 +65,7 @@ typedef enum {
  * ADDED FOR SCHEDULING ASSIGNMENT:
  * Set the time interval for which we will be aging the threads
  */
-#define SCHEDULE_MODE DYNAMIC_PRIORITY
+#define SCHEDULE_MODE MULTI_LEVEL
 
 /* ADDED FOR SCHEDULING ASSIGNMENT:
 Defines the frequency for which the threads change their age for each
@@ -96,9 +96,9 @@ all of the threads from C to the cpu runqueue
 
 #if SCHEDULE_MODE==MULTI_LEVEL
 
-	struct threadlist runqueue_A;
-	struct threadlist runqueue_B;
-	struct threadlist runqueue_C;
+	struct threadlist* runqueue_A;
+	struct threadlist* runqueue_B;
+	struct threadlist* runqueue_C;
 
 #endif
 
@@ -275,7 +275,20 @@ cpu_create(unsigned hardware_number)
 
 	c->c_isidle = false;
 	threadlist_init(&c->c_runqueue);
+
+	/*
+	ADDED FOR SCHEDULING ASSIGNMENT:
+	Aside from initializing c_runqueue, we initialize runqueues A, B and C
+	*/
+
+	if(SCHEDULE_MODE==MULTI_LEVEL){
+		threadlist_init(runqueue_A);
+		threadlist_init(runqueue_B);
+		threadlist_init(runqueue_C);
+	}
+
 	spinlock_init(&c->c_runqueue_lock);
+
 
 	c->c_ipi_pending = 0;
 	c->c_numshootdown = 0;
@@ -989,14 +1002,16 @@ schedule(void)
 	 *			increment by 1 if running.
 	 *
 	 *		+	SCHEDULE_MODE == MULTI_LEVEL
-	 *
-	 *
-	 *
+	 *			We have three runqueues: runqueue_A, runqueue_B, runqueue_C
+	 *			containing priorities 1-10, 11-20 and 21+, respectively
+	 *			Everytime schedule is run, we first age and deage, moving threads in
+	 *			between queues if necessary. Then we decide if the cpu should Yield
+	 *			from A,B or C depending on A or B being empty.
    */
 
 
 	if (SCHEDULE_MODE==STATIC_PRIOIRTY) {
- 			threadlist_sort(&curcpu->c_runqueue);
+ 			threadlist_bubblesort(&curcpu->c_runqueue);
 	}
 
 
@@ -1005,13 +1020,24 @@ schedule(void)
 		{
 			threadlist_updateage(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue);
 		}
-			threadlist_sort(&curcpu->c_runqueue);
+			threadlist_bubblesort(&curcpu->c_runqueue);
 	}
 
 	else if (SCHEDULE_MODE==MULTI_LEVEL) {
+
 		if((curcpu->c_hardclocks % AGING_FREQUENCY) == 0)
 		{
-			threadlist_updateage(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue);
+			threadlist_updateage_multilevel(&curcpu->c_curthread->t_listnode, runqueue_A, runqueue_B, runqueue_C);
+		}
+
+		if(threadlist_isempty(runqueue_A) && threadlist_isempty(runqueue_B)){
+				curcpu->c_runqueue = *runqueue_C;
+		}
+		else if(threadlist_isempty(runqueue_A)){
+				curcpu->c_runqueue = *runqueue_B;
+		}
+		else{
+				curcpu->c_runqueue = *runqueue_A;
 		}
 
 	}

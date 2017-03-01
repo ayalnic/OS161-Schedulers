@@ -65,16 +65,21 @@ void
 loop(void *junk, unsigned long priority)
 {
 	volatile int i;
-	int num_loops = 100;
+	int num_loops = 10000;
 	int ch = '0' + priority;
+
+	ch++;
 
 	P(barrier);
 	V(barrier);
 
 	(void)junk;
 
+	int useless = 2;
+
 	for (i=0; i<num_loops; i++) {
-		putch(ch);
+		//putch(ch);
+		useless = useless*useless;
 	}
 
 	V(tsem);
