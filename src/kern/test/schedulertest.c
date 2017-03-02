@@ -190,7 +190,7 @@ runthreads3()
 		}
 
 		if ((i % 15) == 0)
-			priority += 25;
+			priority += 20;
 	}
 
     // increments barrier
