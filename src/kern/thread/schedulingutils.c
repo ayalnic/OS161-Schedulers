@@ -221,10 +221,46 @@ void printfromnode(struct threadlistnode* tln){
 
 	struct threadlistnode* temp = tln;
 	while(temp->tln_self != NULL){
+<<<<<<< HEAD
 		char priority = temp->tln_self->t_priority + '0';
 		int pri = temp->tln_self->t_priority;
 		if(pri<10){
 			putch('0' + priority);
+=======
+		char priority;
+		if (priority < 10)
+			priority = temp->tln_self->t_priority + '0';
+		else
+			priority = temp->tln_self->t_priority + 'A' - 10;
+	 	putch(priority);
+	 	putch(' '); putch('-'); putch('>'); putch(' ');
+	 temp = temp->tln_next;
+	}
+	putch('\n');
+}
+
+
+void threadlist_updateage(struct threadlistnode *curthread, struct threadlist *tl){
+
+		if(tl->tl_count <= 1){return;} // List has less than 1 element
+
+	//putch('B');putch('4');putch('A');putch('g');putch('e');putch(':');putch('\n'); printfromnode(tl->tl_head.tln_next);
+
+	// increment the thread in the cpu
+	if(curthread->tln_self->t_priority < 0xFFFF)
+	{
+		++(curthread->tln_self->t_priority);
+	}
+
+	struct threadlistnode *temp = tl->tl_head.tln_next;
+	do{
+
+		if (temp->tln_self->t_state == S_READY){
+				if(temp->tln_self->t_priority > 0x0000)
+				{
+					--(temp->tln_self->t_priority);
+				}
+>>>>>>> 4a43e6b20f57c3a842b60b0fcd06487eddbc911d
 		}
 		else{
 			putch('A' + priority - 10);
