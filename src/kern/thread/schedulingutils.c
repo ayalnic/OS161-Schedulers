@@ -16,7 +16,6 @@
 void threadlist_bubblesort(struct threadlist* tl){
 	//putch('B');putch('e');putch('f');putch('o');putch('r');putch('e');putch(':');putch('\n'); printfromnode(tl->tl_head.tln_next);
 	if(tl->tl_count  < 2){
-		// kprintf("\nThreadlist contains less than two nodes. No need to sort \n");
 		return;
 	}
 
@@ -51,87 +50,147 @@ void threadlist_swap(struct threadlistnode* a, struct threadlistnode* b){
 
 void threadlist_updateage(struct threadlistnode *curthread, struct threadlist *tl){
 	// increment the thread in the cpu
-	if(curthread->tln_self->t_priority < 0xFFFF)
+	if(curthread->tln_self!=NULL && curthread->tln_self->t_priority < 0xFFFF)
 	{
 		++(curthread->tln_self->t_priority);
 	}
 
-	printthreadlist(tl);
+	//printthreadlist(tl);
 
 	if(tl->tl_count <= 1){return;} // List has less than 1 element
 
 	struct threadlistnode *temp = tl->tl_head.tln_next;
 	while(temp->tln_self != NULL){
-				if(temp->tln_self->t_priority > 0x0000)
+				if(temp->tln_self->t_priority == S_READY && temp->tln_self->t_priority > 0x0000)
 				{
 					--(temp->tln_self->t_priority);
 				}
+
+				if(temp->tln_self->t_priority == S_RUN && temp->tln_self->t_priority < 0xFFFF)
+				{
+					++(temp->tln_self->t_priority);
+				}
+
 		temp = temp->tln_next;
 	}
 
-	printthreadlist(tl);
+	//printthreadlist(tl);
 
 }
 
 
-void threadlist_updateage_multilevel(struct threadlistnode *curthread, struct threadlist* A, struct threadlist* B, struct threadlist* C){
+void threadlist_updateage_multilevel(struct threadlistnode *curthread, struct threadlist* CPU_RQ, struct threadlist* A, struct threadlist* B, struct threadlist* C){
 
 	// increment the thread in the cpu
-	if(curthread->tln_self->t_priority < 0xFFFF)
+	if(curthread != NULL && curthread->tln_self->t_priority < 0xFFFF)	{		++(curthread->tln_self->t_priority); }
+
+
+	struct threadlistnode* nextTemp;
+	struct threadlistnode* temp;
+	unsigned int i;
+
+	//STEP 1: decrease the priority for all of the threadlists
+
+	if(CPU_RQ->tl_count>0) temp = CPU_RQ->tl_head.tln_next;
+	for(i=0; i<CPU_RQ->tl_count; i++)
 	{
-		++(curthread->tln_self->t_priority);
+		nextTemp = temp->tln_next;
+		if(temp->tln_self->t_priority > 0) {--(temp->tln_self->t_priority);}
+		temp = nextTemp;
 	}
 
-	// decrease the priority for threadlistA, and check if each node belongs there
-	struct threadlistnode* temp = A->tl_head.tln_next;
-	while(temp->tln_self != NULL)
-	{
-		if(temp->tln_self->t_priority > 0x0000) {--(temp->tln_self->t_priority);}
 
+	if(A->tl_count>0) temp = A->tl_head.tln_next;
+	for(i=0; i<A->tl_count; i++)
+	{
+		nextTemp = temp->tln_next;
+		if(temp->tln_self->t_priority > 0) {--(temp->tln_self->t_priority);}
+		temp = nextTemp;
+	}
+
+	if(B->tl_count>0) temp = B->tl_head.tln_next;
+	for(i=0; i<B->tl_count; i++)
+	{
+		nextTemp = temp->tln_next;
+		if(temp->tln_self->t_priority > 0) {--(temp->tln_self->t_priority);}
+		temp = nextTemp;
+	}
+
+	if(C->tl_count>0) temp = C->tl_head.tln_next;
+	for(i=0; i<C->tl_count; i++)
+	{
+		nextTemp = temp->tln_next;
+		if(temp->tln_self->t_priority <= 10) {--(temp->tln_self->t_priority);}
+
+		temp = nextTemp;
+	}
+
+	//STEP 2: Shuffle around the threads to its appropiate location
+
+	threadlist_migrate(CPU_RQ, A); //It doesn't matter if some of the CPU_RQ nodes don't belong in A.
+
+	if(A->tl_count>0) temp = A->tl_head.tln_next;
+	for(i=0; i<A->tl_count; i++)
+	{
+		nextTemp = temp->tln_next;
 		if(temp->tln_self->t_priority > 20){
-			threadlist_move(A, B, temp);
+			threadlist_move(A, B, temp->tln_self);
 		}
 		else if(temp->tln_self->t_priority > 10){
-			threadlist_move(A, C, temp);
+			threadlist_move(A, C, temp->tln_self);
 		}
-		temp = temp->tln_next;
+		temp = nextTemp;
 	}
 
-	// decrease the priorities for threadlistB
-	temp = B->tl_head.tln_next;
-	while(temp->tln_self != NULL)
+	if(B->tl_count>0) temp = B->tl_head.tln_next;
+	for(i=0; i<B->tl_count; i++)
 	{
-		if(temp->tln_self->t_priority > 0x0000) {--(temp->tln_self->t_priority);}
-
-		if(temp->tln_self->t_priority <= 10){
-			threadlist_move(B, A, temp);
+		nextTemp = temp->tln_next;
+		if(temp->tln_self->t_priority <= 10) {
+			threadlist_move(B, A, temp->tln_self);
 		}
 		else if(temp->tln_self->t_priority > 20){
-			threadlist_move(B, C, temp);
+			threadlist_move(B, C, temp->tln_self);
 		}
-		temp = temp->tln_next;
+		temp = nextTemp;
 	}
 
-	// decrease the priorities for threadlistC
-	temp = C->tl_head.tln_next;
-	while(temp->tln_self != NULL)
+	if(C->tl_count>0) temp = C->tl_head.tln_next;
+	for(i=0; i<C->tl_count; i++)
 	{
-		if(temp->tln_self->t_priority > 0x0000) {--(temp->tln_self->t_priority);}
-
-		if(temp->tln_self->t_priority <= 10){
-			threadlist_move(C, A, temp);
+		nextTemp = temp->tln_next;
+		if(temp->tln_self->t_priority <= 10) {
+			threadlist_move(C, A, temp->tln_self);
 		}
 		else if(temp->tln_self->t_priority <= 20){
-			threadlist_move(C, B, temp);
+			threadlist_move(C, B, temp->tln_self);
 		}
-		temp = temp->tln_next;
+		temp = nextTemp;
 	}
+
 }
 
 
-void threadlist_move(struct threadlist* source, struct threadlist* destination, struct threadlistnode *sourceNode){
-	threadlist_remove(source, sourceNode->tln_self);
-	threadlist_addtail(destination, sourceNode->tln_self);
+void threadlist_move(struct threadlist* source, struct threadlist* destination, struct thread *t){
+	threadlist_remove(source, t);
+	threadlist_addtail(destination, t);
+}
+
+void threadlist_migrate(struct threadlist* source, struct threadlist* destination){
+
+	struct thread *t;
+	// unsigned int num_to_migrate = source->tl_count;
+	if(source->tl_count <= 0){
+			//kprintf("\n No nodes to migrate \n");
+			return;
+	}
+
+	while(!threadlist_isempty(source)){
+			t = threadlist_remhead(source);
+			threadlist_addtail(destination, t);
+	}
+
+	return;
 }
 
 
@@ -163,7 +222,13 @@ void printfromnode(struct threadlistnode* tln){
 	struct threadlistnode* temp = tln;
 	while(temp->tln_self != NULL){
 		char priority = temp->tln_self->t_priority + '0';
-		putch(priority);
+		int pri = temp->tln_self->t_priority;
+		if(pri<10){
+			putch('0' + priority);
+		}
+		else{
+			putch('A' + priority - 10);
+		}
 		putch(' '); putch('-'); putch('>'); putch(' ');
 		temp = temp->tln_next;
 	}

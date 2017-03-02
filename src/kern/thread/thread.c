@@ -59,8 +59,6 @@ typedef enum {
 	MULTI_LEVEL
 } scheduler_type;
 
-
-
 /*
  * ADDED FOR SCHEDULING ASSIGNMENT:
  * Set the time interval for which we will be aging the threads
@@ -71,11 +69,11 @@ typedef enum {
 Defines the frequency for which the threads change their age for each
 call of schedule()
 */
-#define AGING_FREQUENCY 8
+#define AGING_FREQUENCY 4
 
 /*
 ADDED FOR SCHEDULING ASSIGNMENT:
-We use a preprocessor to check if scheduler mode is multi level queue.
+We use a preprocessor to check if scheduler mode is a multi level queue.
 If it is, we create three new threadlists: A, B and C
 
 Threadlist A will contain priorities 1-10
@@ -95,14 +93,10 @@ all of the threads from C to the cpu runqueue
 */
 
 #if SCHEDULE_MODE==MULTI_LEVEL
-
-	struct threadlist* runqueue_A;
-	struct threadlist* runqueue_B;
-	struct threadlist* runqueue_C;
-
+	static struct threadlist* runqueue_A;
+	static struct threadlist* runqueue_B;
+	static struct threadlist* runqueue_C;
 #endif
-
-
 
 /* Magic number used as a guard value on kernel thread stacks. */
 #define THREAD_STACK_MAGIC 0xbaadf00d
@@ -267,14 +261,13 @@ cpu_create(unsigned hardware_number)
 
 	c->c_self = c;
 	c->c_hardware_number = hardware_number;
-
 	c->c_curthread = NULL;
+
+
 	threadlist_init(&c->c_zombies);
 	c->c_hardclocks = 0;
 	c->c_spinlocks = 0;
-
 	c->c_isidle = false;
-	threadlist_init(&c->c_runqueue);
 
 	/*
 	ADDED FOR SCHEDULING ASSIGNMENT:
@@ -282,9 +275,17 @@ cpu_create(unsigned hardware_number)
 	*/
 
 	if(SCHEDULE_MODE==MULTI_LEVEL){
+		threadlist_init(&c->c_runqueue);
+
+		runqueue_A = kmalloc(sizeof(struct threadlist *));
+		runqueue_B = kmalloc(sizeof(struct threadlist *));
+		runqueue_C = kmalloc(sizeof(struct threadlist *));
 		threadlist_init(runqueue_A);
 		threadlist_init(runqueue_B);
 		threadlist_init(runqueue_C);
+	}
+	else{
+		threadlist_init(&c->c_runqueue);
 	}
 
 	spinlock_init(&c->c_runqueue_lock);
@@ -570,7 +571,11 @@ thread_make_runnable(struct thread *target, bool already_have_lock)
 
 	/* Target thread is now ready to run; put it on the run queue. */
 	target->t_state = S_READY;
+
+
 	threadlist_addtail(&targetcpu->c_runqueue, target);
+
+
 
 	if (targetcpu->c_isidle && targetcpu != curcpu->c_self) {
 		/*
@@ -1027,17 +1032,28 @@ schedule(void)
 
 		if((curcpu->c_hardclocks % AGING_FREQUENCY) == 0)
 		{
-			threadlist_updateage_multilevel(&curcpu->c_curthread->t_listnode, runqueue_A, runqueue_B, runqueue_C);
+			threadlist_updateage_multilevel(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue, runqueue_A, runqueue_B, runqueue_C);
+
+			// kprintf("Printing curquee & B before aging: \n");
+			// printthreadlist(&curcpu->c_runqueue);
+			// printthreadlist(runqueue_B);
+			//
+			// threadlist_updateage_multilevel(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue, runqueue_B, runqueue_C);
+			//
+			// kprintf("Printing curquee & A before aging: \n");
+			// printthreadlist(&curcpu->c_runqueue);
+			// printthreadlist(runqueue_B);
+
 		}
 
-		if(threadlist_isempty(runqueue_A) && threadlist_isempty(runqueue_B)){
-				curcpu->c_runqueue = *runqueue_C;
+		if(threadlist_isempty(runqueue_A) && threadlist_isempty(runqueue_B)){ //We migrate from list C to cpu runqueue
+				threadlist_migrate(runqueue_C, &curcpu->c_runqueue);
 		}
-		else if(threadlist_isempty(runqueue_A)){
-				curcpu->c_runqueue = *runqueue_B;
+		else if(threadlist_isempty(runqueue_A)){ //We migrate from list B to cpu runqueue
+				threadlist_migrate(runqueue_B, &curcpu->c_runqueue);
 		}
-		else{
-				curcpu->c_runqueue = *runqueue_A;
+		else{  //We migrate from list A to cpu runqueue
+				threadlist_migrate(runqueue_A, &curcpu->c_runqueue);
 		}
 
 	}
