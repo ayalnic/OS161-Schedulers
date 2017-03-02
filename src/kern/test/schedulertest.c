@@ -74,12 +74,18 @@ loop(void *junk, unsigned long priority)
 	(void)junk;
 
 	for (i=0; i<num_loops; i++) {
-		putch(ch);
+		if(priority > 9){
+			ch = 'A' + priority - 10;
+			putch(ch);
+		}
+		else
+			putch(ch);
 	}
 
 	V(tsem);
 }
 
+/* Sch1 Code */
 
 static
 void
@@ -87,15 +93,15 @@ runthreads()
 {
 	char name[16];
 	int i, result;
-	unsigned int priority = 30;
+	unsigned int priority = 1;
 
 	for (i=1; i<=30; i++) {
 		snprintf(name, sizeof(name), "thread_%d\n", i);
-		result = thread_fork_priority(name, priority], NULL, loop, NULL, priority);
+		result = thread_fork_priority(name, priority, NULL, loop, NULL, priority);
 		if (result) {
 			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
 		}
-		priority -= 1;
+		priority++;
 	}
 
     // increments barrier
@@ -122,24 +128,23 @@ schedulertest(int nargs, char **args)
 	return 0;
 }
 
+
+/* sch2 code */
+
 static
 void
 runthreads2()
 {
 	char name[16];
 	int i, result;
-	unsigned int priority = 1;
+	int priority[] = {1, 14, 2, 16, 12, 16, 18, 9, 4, 5, 11, 8, 14, 12, 4, 6, 8, 5, 9, 4, 2, 3, 4, 4, 5, 6, 17, 19, 11, 1};
 
 	for (i=1; i<=30; i++) {
 		snprintf(name, sizeof(name), "thread_%d\n", i);
-		result = thread_fork_priority(name, priority, NULL, loop, NULL, priority);
+		result = thread_fork_priority(name, priority[i], NULL, loop, NULL, priority[i]);
 		if (result) {
 			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
 		}
-
-		/* create multiple threads of the same priority */
-		if ((i % 5) == 0)
-			priority += 5;
 	}
 
     // increments barrier
@@ -166,13 +171,16 @@ schedulertest2(int nargs, char **args)
 	return 0;
 }
 
+
+/* sch3 code */
+
 static
 void
 runthreads3()
 {
 	char name[16];
 	int i, result;
-	unsigned int priority = 1;
+	unsigned int priority = 5;
 
 	for (i=1; i<=30; i++) {
 		snprintf(name, sizeof(name), "thread_%d\n", i);
@@ -180,7 +188,9 @@ runthreads3()
 		if (result) {
 			panic("schedulertest: thread_fork failed %s)\n", strerror(result));
 		}
-		priority += 3;
+
+		if ((i % 15) == 0)
+			priority += 25;
 	}
 
     // increments barrier
@@ -201,7 +211,7 @@ schedulertest3(int nargs, char **args)
 
 	init_semaphores();
 	kprintf("Starting scheduler test...\n");
-	runthreads2();
+	runthreads3();
 	kprintf("\nScheduler test done.\n");
 
 	return 0;

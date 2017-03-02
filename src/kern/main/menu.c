@@ -616,8 +616,8 @@ static struct {
 
     /* PA1 tests */
     { "sch1",   schedulertest},
-    { "sch1",   schedulertest2},
-    { "sch1",   schedulertest3},
+    { "sch2",   schedulertest2},
+    { "sch3",   schedulertest3},
 	{ NULL, NULL }
 };
 

@@ -167,9 +167,13 @@ void printfromnode(struct threadlistnode* tln){
 
 	struct threadlistnode* temp = tln;
 	while(temp->tln_self != NULL){
-	 char priority = temp->tln_self->t_priority + '0';
-	 putch(priority);
-	 putch(' '); putch('-'); putch('>'); putch(' ');
+		char priority;
+		if (priority < 10)
+			priority = temp->tln_self->t_priority + '0';
+		else
+			priority = temp->tln_self->t_priority + 'A' - 10;
+	 	putch(priority);
+	 	putch(' '); putch('-'); putch('>'); putch(' ');
 	 temp = temp->tln_next;
 	}
 	putch('\n');
