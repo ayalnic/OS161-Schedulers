@@ -1,0 +1,44 @@
+================================================
+
+CSCI 5103 - GROUP AC
+
+	Kong Yang (Dropped the class)
+	Ed Nunez
+
+================================================
+
+DESIGN CHOICES
+
+--------------------------------
+MODIFICATIONS TO THE CODEBASE
+-------------------------------
+
+All of the changes were done in either thread.c or schedulerutils.c: a file created containing utlities for sorting, moving nodes in between queueus, aging and more.
+
+----------------
+STATIC_PRIORITY
+----------------
+
+When trying to sort the run queue, we had attempted to use merge sort as this would be the most efficient and straight forward O(nlogn) sorting alorithm that would allow us to sort the entirety of the list based on priority. After many hours, we failed to get the algorithm working due to very frustrating pointers in nodes that were supposed to pointers to NULL but instead they were pointing to an unknown address.
+
+With time limitations, we decided to go forth with bubble sort to sort the list. This sort works by swapping the listnode pointers in place with a total O(n^2) runtime. This function is found on schedulingutils.c under 'threadlist_bubblesort', and it is called everytime schedule() runs; after being sorted the cpu picks out the thread that was placed in the front of the queue. For the first few cycles, schedule is not called, so the first few threads run like a FIFO scheduler. 
+
+
+----------------
+DYNAMIC_PRIORITY
+----------------
+
+We used the number of hardclocks as a time unit to determine how frequently we need to update the priorities. The AGE_FREQUENCY parameters was put to adjust for any necessary aging requirements. Everytime schedule() is told to update ages, the function 'threadlist_updateage' within schedulingutils.c scans through the runqueue and decreases priorities by one for all nodes in the S_READY state. It also increases the priority of the currently running thread.
+
+The DYNAMIC_PRIORITY scheduler also runs the bubblesort function, just like STATIC_PRIORITY.
+
+
+----------------
+MULTI_LEVEL
+----------------
+
+There are three threadlists that were created within thread.c and are named A,B,C corresponding to priorities 1-10, 11-20 and 21+, respectively.
+
+Everytime schedule() runs, we first determine if we need to update ages, just like DYNAMIC_PRIORITY. If we need to update ages, we scan through the threadlists A,B and C and the CPU runqueue and decrease priorities by one using 'threadlist_updateage_multilevel'. If any of the threads leave the priority bounds for their queue they will be upgraded or downgrawded to another one.
+
+After that is done we determine if the threadlists A,B and C are empty in that order. If A & B are empty, all of the nodes from list C are put into the runqueue. If only A is empty, B is put into the runqueue. Otherwise, A nodes are put into the runqueue.

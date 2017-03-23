@@ -13,7 +13,7 @@
 # The things that can be set here are documented in mk/os161.config.mk.
 #
 
-OSTREE=/home/yang3631/os161/root/
+OSTREE=/home/nunez087/Desktop/OS161-Schedulers/root
 PLATFORM=sys161
 MACHINE=mips
 COMPAT_CFLAGS= -DNEED_NTOHLL

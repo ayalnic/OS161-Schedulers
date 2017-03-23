@@ -325,6 +325,8 @@ file      thread/spinlock.c
 file      thread/synch.c
 file      thread/thread.c
 file      thread/threadlist.c
+file      thread/schedulingutils.c
+
 
 #
 # Process system
@@ -437,4 +439,5 @@ file		test/synchtest.c
 file		test/semunit.c
 file		test/kmalloctest.c
 file		test/fstest.c
+file 		test/schedulertest.c
 optfile net	test/nettest.c

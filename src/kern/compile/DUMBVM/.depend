@@ -451,6 +451,14 @@ kmalloctest.o: ../../test/kmalloctest.c ../../include/types.h \
  includelinks/kern/machine/setjmp.h ../../include/synch.h \
  ../../include/vm.h includelinks/machine/vm.h ../../include/test.h \
  opt-dumbvm.h
+schedulertest.o: ../../test/schedulertest.c ../../include/types.h \
+ ../../include/kern/types.h includelinks/kern/machine/types.h \
+ includelinks/machine/types.h ../../include/lib.h ../../include/cdefs.h \
+ opt-noasserts.h ../../include/thread.h ../../include/array.h \
+ ../../include/spinlock.h includelinks/machine/spinlock.h \
+ ../../include/threadlist.h includelinks/machine/thread.h \
+ ../../include/setjmp.h includelinks/kern/machine/setjmp.h \
+ ../../include/synch.h ../../include/test.h
 semunit.o: ../../test/semunit.c ../../include/types.h \
  ../../include/kern/types.h includelinks/kern/machine/types.h \
  includelinks/machine/types.h ../../include/lib.h ../../include/cdefs.h \
@@ -503,6 +511,14 @@ clock.o: ../../thread/clock.c ../../include/types.h \
  includelinks/machine/thread.h ../../include/setjmp.h \
  includelinks/kern/machine/setjmp.h ../../include/current.h \
  includelinks/machine/current.h
+schedulingutils.o: ../../thread/schedulingutils.c ../../include/types.h \
+ ../../include/kern/types.h includelinks/kern/machine/types.h \
+ includelinks/machine/types.h ../../include/lib.h ../../include/cdefs.h \
+ opt-noasserts.h ../../include/thread.h ../../include/array.h \
+ ../../include/spinlock.h includelinks/machine/spinlock.h \
+ ../../include/threadlist.h includelinks/machine/thread.h \
+ ../../include/setjmp.h includelinks/kern/machine/setjmp.h \
+ ../../include/schedulingutils.h
 spinlock.o: ../../thread/spinlock.c ../../include/types.h \
  ../../include/kern/types.h includelinks/kern/machine/types.h \
  includelinks/machine/types.h ../../include/lib.h ../../include/cdefs.h \
@@ -543,7 +559,8 @@ thread.o: ../../thread/thread.c ../../include/types.h \
  ../../include/threadprivate.h ../../include/proc.h \
  ../../include/current.h includelinks/machine/current.h \
  ../../include/synch.h ../../include/addrspace.h ../../include/vm.h \
- opt-dumbvm.h ../../include/mainbus.h ../../include/vnode.h
+ opt-dumbvm.h ../../include/mainbus.h ../../include/vnode.h \
+ ../../include/schedulingutils.h
 threadlist.o: ../../thread/threadlist.c ../../include/types.h \
  ../../include/kern/types.h includelinks/kern/machine/types.h \
  includelinks/machine/types.h ../../include/lib.h ../../include/cdefs.h \

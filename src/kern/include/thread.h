@@ -55,7 +55,6 @@ struct cpu;
 /* Macro to test if two addresses are on the same kernel stack */
 #define SAME_STACK(p1, p2)     (((p1) & STACK_MASK) == ((p2) & STACK_MASK))
 
-
 /* States a thread can be in. */
 typedef enum {
 	S_RUN,		/* running */
@@ -104,7 +103,7 @@ struct thread {
 	/*
 	 * Public fields
 	 */
-
+	unsigned int t_priority;
 	/* add more here as needed */
 };
 
@@ -141,6 +140,10 @@ void thread_shutdown(void);
  * disappear at any time without notice.
  */
 int thread_fork(const char *name, struct proc *proc,
+                void (*func)(void *, unsigned long),
+                void *data1, unsigned long data2);
+
+int thread_fork_priority(const char *name, unsigned int priority, struct proc *proc,
                 void (*func)(void *, unsigned long),
                 void *data1, unsigned long data2);
 

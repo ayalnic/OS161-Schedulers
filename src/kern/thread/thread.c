@@ -50,7 +50,50 @@
 #include <addrspace.h>
 #include <mainbus.h>
 #include <vnode.h>
+#include <schedulingutils.h>
 
+/* ADDED FOR SCHEDULING ASSIGNMENT: Enum for the type of scheduler to use */
+typedef enum {
+	STATIC_PRIOIRTY,
+	DYNAMIC_PRIORITY,
+	MULTI_LEVEL
+} scheduler_type;
+
+/*
+ * ADDED FOR SCHEDULING ASSIGNMENT:
+ * Set the type of scheduler used (Choose any from the scheduler_type enum)
+ */
+#define SCHEDULE_MODE MULTI_LEVEL
+
+/* ADDED FOR SCHEDULING ASSIGNMENT:
+Defines the frequency for which the threads change their age for each
+call of schedule().
+*/
+#define AGING_FREQUENCY 3
+
+/*
+ADDED FOR SCHEDULING ASSIGNMENT:
+We use a preprocessor to check if scheduler mode is a multi level queue.
+If it is, we create three new threadlists: A, B and C
+
+Threadlist A will contain priorities 1-10
+Threadlist B will contain priorities 11-20
+Threadlist C will contain priorities 21+
+
+Everytime schedule() is called, we look at all of the threadnodes that exist
+in the cpu runqueu and place them in their appropiate threadlists A,B, or C.
+
+We applying aging, if we meet the aging frequency.
+
+After all of the threads are distributed into A, B, or C we choose
+
+*/
+
+#if SCHEDULE_MODE==MULTI_LEVEL
+	static struct threadlist* runqueue_A;
+	static struct threadlist* runqueue_B;
+	static struct threadlist* runqueue_C;
+#endif
 
 /* Magic number used as a guard value on kernel thread stacks. */
 #define THREAD_STACK_MAGIC 0xbaadf00d
@@ -110,7 +153,7 @@ thread_checkstack(struct thread *thread)
 
 /*
  * Create a thread. This is used both to create a first thread
- * for each CPU and to create subsequent forked threads.
+ * for each CPU and to create subsequent ed threads.
  */
 static
 struct thread *
@@ -146,8 +189,50 @@ thread_create(const char *name)
 	thread->t_curspl = IPL_HIGH;
 	thread->t_iplhigh_count = 1; /* corresponding to t_curspl */
 
+
 	/* If you add to struct thread, be sure to initialize here */
 
+	return thread;
+}
+
+
+
+static
+struct thread *
+thread_create_priority(const char *name, unsigned int priority)
+{
+	struct thread *thread;
+
+	DEBUGASSERT(name != NULL);
+
+	thread = kmalloc(sizeof(*thread));
+	if (thread == NULL) {
+		return NULL;
+	}
+
+	thread->t_name = kstrdup(name);
+	if (thread->t_name == NULL) {
+		kfree(thread);
+		return NULL;
+	}
+	thread->t_wchan_name = "NEW";
+	thread->t_state = S_READY;
+
+	/* Thread subsystem fields */
+	thread_machdep_init(&thread->t_machdep);
+	threadlistnode_init(&thread->t_listnode, thread);
+	thread->t_stack = NULL;
+	thread->t_context = NULL;
+	thread->t_cpu = NULL;
+	thread->t_proc = NULL;
+
+	/* Interrupt state fields */
+	thread->t_in_interrupt = false;
+	thread->t_curspl = IPL_HIGH;
+	thread->t_iplhigh_count = 1; /* corresponding to t_curspl */
+
+	/* If you add to struct thread, be sure to initialize here */
+	thread->t_priority = priority;
 	return thread;
 }
 
@@ -173,15 +258,35 @@ cpu_create(unsigned hardware_number)
 
 	c->c_self = c;
 	c->c_hardware_number = hardware_number;
-
 	c->c_curthread = NULL;
+
+
 	threadlist_init(&c->c_zombies);
 	c->c_hardclocks = 0;
 	c->c_spinlocks = 0;
-
 	c->c_isidle = false;
-	threadlist_init(&c->c_runqueue);
+
+	/*
+	ADDED FOR SCHEDULING ASSIGNMENT:
+	Aside from initializing c_runqueue, we initialize runqueues A, B and C
+	*/
+
+	if(SCHEDULE_MODE==MULTI_LEVEL){
+		threadlist_init(&c->c_runqueue);
+
+		runqueue_A = kmalloc(sizeof(struct threadlist *));
+		runqueue_B = kmalloc(sizeof(struct threadlist *));
+		runqueue_C = kmalloc(sizeof(struct threadlist *));
+		threadlist_init(runqueue_A);
+		threadlist_init(runqueue_B);
+		threadlist_init(runqueue_C);
+	}
+	else{
+		threadlist_init(&c->c_runqueue);
+	}
+
 	spinlock_init(&c->c_runqueue_lock);
+
 
 	c->c_ipi_pending = 0;
 	c->c_numshootdown = 0;
@@ -463,7 +568,11 @@ thread_make_runnable(struct thread *target, bool already_have_lock)
 
 	/* Target thread is now ready to run; put it on the run queue. */
 	target->t_state = S_READY;
+
+
 	threadlist_addtail(&targetcpu->c_runqueue, target);
+
+
 
 	if (targetcpu->c_isidle && targetcpu != curcpu->c_self) {
 		/*
@@ -544,6 +653,64 @@ thread_fork(const char *name,
 	return 0;
 }
 
+
+int
+thread_fork_priority(const char *name,
+		unsigned int priority,
+	    struct proc *proc,
+	    void (*entrypoint)(void *data1, unsigned long data2),
+	    void *data1, unsigned long data2)
+{
+	struct thread *newthread;
+	int result;
+
+	newthread = thread_create_priority(name, priority);
+	if (newthread == NULL) {
+		return ENOMEM;
+	}
+
+	/* Allocate a stack */
+	newthread->t_stack = kmalloc(STACK_SIZE);
+	if (newthread->t_stack == NULL) {
+		thread_destroy(newthread);
+		return ENOMEM;
+	}
+	thread_checkstack_init(newthread);
+
+	/*
+	 * Now we clone various fields from the parent thread.
+	 */
+
+	/* Thread subsystem fields */
+	newthread->t_cpu = curthread->t_cpu;
+
+	/* Attach the new thread to its process */
+	if (proc == NULL) {
+		proc = curthread->t_proc;
+	}
+	result = proc_addthread(proc, newthread);
+	if (result) {
+		/* thread_destroy will clean up the stack */
+		thread_destroy(newthread);
+		return result;
+	}
+
+	/*
+	 * Because new threads come out holding the cpu runqueue lock
+	 * (see notes at bottom of thread_switch), we need to account
+	 * for the spllower() that will be done releasing it.
+	 */
+	newthread->t_iplhigh_count++;
+
+	/* Set up the switchframe so entrypoint() gets called */
+	switchframe_init(newthread, entrypoint, data1, data2);
+
+	/* Lock the current cpu's run queue and make the new thread runnable */
+	thread_make_runnable(newthread, false);
+
+	return 0;
+}
+
 /*
  * High level, machine-independent context switch code.
  *
@@ -558,6 +725,7 @@ static
 void
 thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
 {
+
 	struct thread *cur, *next;
 	int spl;
 
@@ -566,7 +734,6 @@ thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
 
 	/* Explicitly disable interrupts on this processor */
 	spl = splhigh();
-
 	cur = curthread;
 
 	/*
@@ -818,10 +985,78 @@ thread_yield(void)
 void
 schedule(void)
 {
-	/*
-	 * You can write this. If we do nothing, threads will run in
-	 * round-robin fashion.
-	 */
+	/* Lock the run queue. */
+	spinlock_acquire(&curcpu->c_runqueue_lock);
+	/* Disable interrupts */
+	int spl;
+	spl = splhigh();
+
+	/* ADDED FOR SCHEDULING ASSIGNMENT:
+	 * Depending on the value of SCHEDULE_MODE, there are different methods the
+	 * next thread is scheduled:
+	 *
+	 * 		+	SCHEDULE_MODE == STATIC_PRIOIRTY
+	 *			In this mode, the runqueue is sorted based on priority.
+	 *
+	 *		+	SCHEDULE_MODE == DYNAMIC_PRIORITY
+	 *			We sort just like STATIC_PRIOIRTY, depending on the value of
+	 *			AGING_FREQUENCY, the threads will decrement in priority by 1 if
+	 *			in the runqueue or increment by 1 if running.
+	 *
+	 *		+	SCHEDULE_MODE == MULTI_LEVEL
+	 *			We have three runqueues: runqueue_A, runqueue_B, runqueue_C
+	 *			containing priorities 1-10, 11-20 and 21+, respectively
+	 *
+	 *			Everytime schedule is run, the ages for all threads are updated.
+	 *
+	 *      After that, the threads move from queue to queue if their priority
+	 *      allows them to updgrade or downgrade queues.
+	 *
+	 *
+	 *      The cpu runqueue then tries to pull all nodes from either
+	 *			A, B, or C. In that order
+   */
+
+
+	if (SCHEDULE_MODE==STATIC_PRIOIRTY) {
+ 			threadlist_bubblesort(&curcpu->c_runqueue);
+	}
+
+
+	else if (SCHEDULE_MODE==DYNAMIC_PRIORITY) {
+		if((curcpu->c_hardclocks % AGING_FREQUENCY) == 0)
+		{
+			threadlist_updateage(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue);
+		}
+			threadlist_bubblesort(&curcpu->c_runqueue);
+	}
+
+	else if (SCHEDULE_MODE==MULTI_LEVEL) {
+
+		//Update aging, move around queues
+		if((curcpu->c_hardclocks % AGING_FREQUENCY) == 0)
+		{
+			threadlist_updateage_multilevel(&curcpu->c_curthread->t_listnode, &curcpu->c_runqueue, runqueue_A, runqueue_B, runqueue_C);
+		}
+
+		//Migration to runqueue
+		if(threadlist_isempty(&curcpu->c_runqueue) && threadlist_isempty(runqueue_A) && threadlist_isempty(runqueue_B)){ //We migrate from list C to cpu runqueue
+				threadlist_migrate(runqueue_C, &curcpu->c_runqueue);
+		}
+		else if(threadlist_isempty(&curcpu->c_runqueue) && threadlist_isempty(runqueue_A)){ //We migrate from list B to cpu runqueue
+				threadlist_migrate(runqueue_B, &curcpu->c_runqueue);
+		}
+		else{  //We migrate from list A to cpu runqueue
+				threadlist_migrate(runqueue_A, &curcpu->c_runqueue);
+		}
+
+	}
+
+	// re-enable interrupts
+	splx(spl);
+	/* Release run queue */
+	spinlock_release(&curcpu->c_runqueue_lock);
+
 }
 
 /*
